@@ -237,24 +237,6 @@ app.put("/api/cancel-booking/:id", (req, res) => {
     res.json({ message: "Đã huỷ lịch thành công" });
   });
 });
-
-//   const bookingId = req.params.id;
-//   const { repair_price, admin_note } = req.body;
-
-//   const sql = `
-//     UPDATE bookings
-//     SET repair_price = ?, 
-//         admin_note = ?,
-//         status = 'Đang Sửa'
-//     WHERE id = ?
-//   `;
-
-//   pool.query(sql, [repair_price, admin_note, bookingId], (err) => {
-//     if (err) return res.status(500).json(err);
-
-//     res.json({ message: "Đã cập nhật báo giá" });
-//   });
-// });
 app.put("/api/bookings/:id/quote", (req, res) => {
   const bookingId = req.params.id;
   const { repair_price, admin_note } = req.body;
@@ -406,6 +388,8 @@ app.get("/api/admin/new-bookings", (req, res) => {
     res.json(results);
   });
 });
-app.listen(5000, () => {
-    console.log('Server running on port 5000');
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
 });
