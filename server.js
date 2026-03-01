@@ -5,7 +5,7 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-const pool = require("./config/db");
+const pool = require("./config/db.js");
 
 const app = express();
 const SECRET_KEY = process.env.JWT_SECRET || "nmt_secret_key";
