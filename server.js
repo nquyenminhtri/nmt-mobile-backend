@@ -74,35 +74,6 @@ app.post("/api/verify-otp", (req, res) => {
 });
 
 // API tạo booking
-// app.post("/api/bookings", (req, res) => {
-//   const {
-//     customer_name,
-//     phone_number,
-//     email,
-//     device_model,
-//     repair_issue,
-//     appointment_date,
-//   } = req.body;
-
-//   const sql = `
-//     INSERT INTO bookings 
-//     (customer_name, phone_number, email, device_model, repair_issue, appointment_date)
-//     VALUES (?, ?, ?, ?, ?, ?)
-//   `;
-
-//   db.query(
-//     sql,
-//     [customer_name, phone_number,email, device_model, repair_issue, appointment_date],
-//     (err, result) => {
-//       if (err) {
-//         console.error(err);
-//         return res.status(500).json({ error: "Database error" });
-//       }
-
-//       res.json({ message: "Đặt lịch thành công!" });
-//     }
-//   );
-// });
 app.post("/api/bookings", async (req, res) => {
   const {
     customer_name,
@@ -267,7 +238,6 @@ app.put("/api/cancel-booking/:id", (req, res) => {
   });
 });
 
-// app.put("/api/bookings/:id/quote", (req, res) => {
 //   const bookingId = req.params.id;
 //   const { repair_price, admin_note } = req.body;
 
