@@ -21,7 +21,7 @@ app.use(express.json());
 app.post("/api/send-otp", (req, res) => {
   const { phone } = req.body;
 
-  db.query(
+  pool.query(
     "SELECT email FROM bookings WHERE phone_number = ? LIMIT 1",
     [phone],
     async (err, result) => {
@@ -61,7 +61,7 @@ app.post("/api/verify-otp", (req, res) => {
     return res.status(400).json({ message: "Mã OTP không đúng" });
   }
 
-  db.query(
+  pool.query(
     "SELECT * FROM bookings WHERE phone_number = ?",
     [phone],
     (err, result) => {
@@ -90,7 +90,7 @@ app.post("/api/bookings", async (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?)
   `;
 
-  db.query(
+  pool.query(
     sql,
     [
       customer_name,
@@ -122,7 +122,7 @@ app.get("/api/bookings/:phone", (req, res) => {
 
   const sql = "SELECT * FROM bookings WHERE phone_number = ? ORDER BY created_at DESC";
 
-  db.query(sql, [phone], (err, results) => {
+  pool.query(sql, [phone], (err, results) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ error: "Database error" });
@@ -140,7 +140,7 @@ app.post("/api/register", async (req, res) => {
   const sql =
     "INSERT INTO users (username, password, full_name, phone_number, role) VALUES (?, ?, ?, ?, ?)";
 
-  db.query(
+  pool.query(
     sql,
     [username, hashedPassword, full_name, phone_number, role],
     (err, result) => {
@@ -156,7 +156,7 @@ app.post("/api/login", (req, res) => {
 
   const sql = "SELECT * FROM users WHERE username = ?";
 
-  db.query(sql, [username], async (err, results) => {
+  pool.query(sql, [username], async (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
 
     if (results.length === 0)
@@ -198,7 +198,7 @@ app.get("/api/admin/bookings", verifyToken, (req, res) => {
     return res.status(403).json({ message: "Không có quyền truy cập" });
   }
 
-  db.query("SELECT * FROM bookings", (err, results) => {
+  pool.query("SELECT * FROM bookings", (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
 
     res.json(results);
@@ -209,14 +209,14 @@ app.get("/api/admin/users", verifyToken, (req, res) => {
     return res.status(403).json({ message: "Không có quyền" });
   }
 
-  db.query("SELECT id, username, full_name,phone_number, role FROM users", (err, result) => {
+  pool.query("SELECT id, username, full_name,phone_number, role FROM users", (err, result) => {
     if (err) return res.status(500).json(err);
     res.json(result);
   });
 });
 // lấy dữ liệu đặt lịch 
 app.get("/api/admin/bookings", verifyToken, (req, res) => {
-  db.query("SELECT * FROM bookings ORDER BY id DESC", (err, result) => {
+  pool.query("SELECT * FROM bookings ORDER BY id DESC", (err, result) => {
     if (err) return res.status(500).json(err);
     res.json(result);
   });
@@ -231,7 +231,7 @@ app.put("/api/cancel-booking/:id", (req, res) => {
     WHERE id = ? AND status IN ('Chờ Xác Nhận', 'confirmed')
   `;
 
-  db.query(sql, [bookingId], (err, result) => {
+  pool.query(sql, [bookingId], (err, result) => {
     if (err) return res.status(500).json(err);
 
     res.json({ message: "Đã huỷ lịch thành công" });
@@ -249,7 +249,7 @@ app.put("/api/cancel-booking/:id", (req, res) => {
 //     WHERE id = ?
 //   `;
 
-//   db.query(sql, [repair_price, admin_note, bookingId], (err) => {
+//   pool.query(sql, [repair_price, admin_note, bookingId], (err) => {
 //     if (err) return res.status(500).json(err);
 
 //     res.json({ message: "Đã cập nhật báo giá" });
@@ -274,7 +274,7 @@ app.put("/api/bookings/:id/quote", (req, res) => {
     WHERE id = ?
   `;
 
-  db.query(sql, [repair_price, admin_note, bookingId], (err) => {
+  pool.query(sql, [repair_price, admin_note, bookingId], (err) => {
     if (err) return res.status(500).json(err);
 
     res.json({ message: "Đã cập nhật báo giá" });
@@ -291,7 +291,7 @@ app.put("/api/bookings/:id/complete", (req, res) => {
     WHERE id = ? AND status = 'Đang Sửa'
   `;
 
-  db.query(sql, [bookingId], (err) => {
+  pool.query(sql, [bookingId], (err) => {
     if (err) return res.status(500).json(err);
 
     res.json({ message: "Đã hoàn thành đơn" });
@@ -334,7 +334,7 @@ app.get("/api/admin/dashboard", async (req, res) => {
       queries.map(
         (sql) =>
           new Promise((resolve, reject) => {
-            db.query(sql, (err, result) => {
+            pool.query(sql, (err, result) => {
               if (err) reject(err);
               else resolve(result);
             });
@@ -375,7 +375,7 @@ app.get("/api/admin/revenue-7days", (req, res) => {
   ORDER BY date ASC
 `;
 
-  db.query(sql, (err, results) => {
+  pool.query(sql, (err, results) => {
     if (err) return res.status(500).json(err);
     res.json(results);
   });
@@ -387,7 +387,7 @@ app.get("/api/admin/status-summary", (req, res) => {
     GROUP BY status
   `;
 
-  db.query(sql, (err, results) => {
+  pool.query(sql, (err, results) => {
     if (err) return res.status(500).json(err);
     res.json(results);
   });
@@ -401,7 +401,7 @@ app.get("/api/admin/new-bookings", (req, res) => {
     LIMIT 5
   `;
 
-  db.query(sql, (err, results) => {
+  pool.query(sql, (err, results) => {
     if (err) return res.status(500).json(err);
     res.json(results);
   });
