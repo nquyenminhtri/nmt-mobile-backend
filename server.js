@@ -219,49 +219,56 @@ app.get("/api/admin/dashboard", async (req, res) => {
   }
 });
 
-app.get("/api/admin/new-bookings", (req, res) => {
-  const sql = `
-    SELECT id, customer_name
-    FROM bookings
-    WHERE status = 'Chờ Xác Nhận'
-    ORDER BY created_at DESC
-    LIMIT 5
-  `;
+app.get("/api/admin/new-bookings", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, customer_name
+      FROM bookings
+      WHERE status = 'Chờ Xác Nhận'
+      ORDER BY created_at DESC
+      LIMIT 5
+    `);
 
-  db.query(sql, (err, results) => {
-    if (err) return res.status(500).json(err);
-    res.json(results);
-  });
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 // Lấy doanh thu 7 ngày 
-app.get("/api/admin/revenue-7days", (req, res) => {
-  const sql = `
-  SELECT DATE(completed_at) as date,
-         SUM(repair_price) as total
-  FROM bookings
-  WHERE status = 'Hoàn Thành'
-  AND completed_at IS NOT NULL
-  AND completed_at >= CURDATE() - INTERVAL 7 DAY
-  GROUP BY DATE(completed_at)
-  ORDER BY date ASC
-`;
+app.get("/api/admin/revenue-7days", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        DATE(completed_at) AS date,
+        SUM(repair_price) AS total
+      FROM bookings
+      WHERE status = 'Hoàn Thành'
+      AND completed_at IS NOT NULL
+      AND completed_at >= CURRENT_DATE - INTERVAL '7 days'
+      GROUP BY DATE(completed_at)
+      ORDER BY date ASC
+    `);
 
-  db.query(sql, (err, results) => {
-    if (err) return res.status(500).json(err);
-    res.json(results);
-  });
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
-app.get("/api/admin/status-summary", (req, res) => {
-  const sql = `
-    SELECT status, COUNT(*) as total
-    FROM bookings
-    GROUP BY status
-  `;
+app.get("/api/admin/status-summary", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT status, COUNT(*) AS total
+      FROM bookings
+      GROUP BY status
+    `);
 
-  db.query(sql, (err, results) => {
-    if (err) return res.status(500).json(err);
-    res.json(results);
-  });
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 // ================= SERVER =================
