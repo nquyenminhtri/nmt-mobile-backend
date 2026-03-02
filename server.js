@@ -68,26 +68,38 @@ const pool = new Pool({
 app.post("/api/send-otp", async (req, res) => {
   try {
     const { phone } = req.body;
+    console.log("Phone nhận được:", phone);
 
     const result = await pool.query(
       "SELECT email FROM bookings WHERE phone_number = $1 LIMIT 1",
       [phone]
     );
 
+    console.log("Query result:", result.rows);
+
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "Không tìm thấy lịch" });
     }
 
     const email = result.rows[0].email;
+    console.log("Email lấy từ DB:", email);
 
     const otp = Math.floor(100000 + Math.random() * 900000);
+    console.log("OTP tạo ra:", otp);
 
-    await sendEmail(email, otp);
+    const response = await resend.emails.send({
+      from: "onboarding@resend.dev",
+      to: email,
+      subject: "Test OTP",
+      html: `<h1>${otp}</h1>`
+    });
+
+    console.log("Resend response:", response);
 
     res.json({ message: "OTP sent" });
 
   } catch (err) {
-    console.error(err);
+    console.error("FULL ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 });
