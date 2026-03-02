@@ -90,7 +90,6 @@ app.post("/api/send-otp", async (req, res) => {
     console.log("OTP tạo ra:", otp);
 
     await sendEmail(email, otp);
-    console.log("Resend response:", response);
 
     res.json({ message: "OTP sent" });
 
