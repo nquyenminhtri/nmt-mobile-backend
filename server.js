@@ -1,13 +1,15 @@
+import dotenv from "dotenv";
+dotenv.config();
 
-require("dotenv").config();
-
-const express = require("express");
-const cors = require("cors");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer");
+import express from "express";
+import cors from "cors";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer"; // nếu còn dùng
 import { sendEmail } from "./utils/sendEmail.js";
-const { Pool } = require("pg");
+import pkg from "pg";
+
+const { Pool } = pkg;
 
 const app = express();
 app.use(cors());
