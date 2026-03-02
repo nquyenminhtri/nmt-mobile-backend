@@ -1,32 +1,24 @@
-const nodemailer = require("nodemailer");
+import { Resend } from "resend";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: "nmtmobilevn@gmail.com", // email của bạn
-    pass: "rysjgkaitplvyzze", // app password
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-const sendBookingEmail = async (booking) => {
-  const mailOptions = {
-    from: "nmtmobilevn@gmail.com",
-    to: booking.email,
-    subject: "Xác nhận đặt lịch sửa chữa",
-    html: `
-      <h2>Xin chào ${booking.customer_name}</h2>
-      <p>Bạn đã đặt lịch sửa chữa thành công.</p>
-      <ul>
-        <li>Số điện thoại: ${booking.phone_number}</li>
-        <li>Dòng máy: ${booking.device_model}</li>
-        <li>Lỗi: ${booking.repair_issue}</li>
-        <li>Ngày hẹn: ${booking.appointment_date}</li>
-      </ul>
-      <p>Cửa hàng sẽ liên hệ với bạn sớm nhất.</p>
-    `,
-  };
+export const sendEmail = async (to, otp) => {
+  try {
+    const data = await resend.email.send({
+      from: "onboarding@resend.dev", // dùng tạm domain này
+      to: to,
+      subject: "Mã OTP xác nhận",
+      html: `
+        <h2>Xác nhận tra cứu sửa chữa</h2>
+        <p>Mã OTP của bạn là:</p>
+        <h1>${otp}</h1>
+        <p>Mã có hiệu lực trong 60 giây.</p>
+      `,
+    });
 
-  await transporter.sendMail(mailOptions);
+    console.log("Email sent:", data);
+  } catch (error) {
+    console.error("Resend error:", error);
+    throw error;
+  }
 };
-
-module.exports = sendBookingEmail;

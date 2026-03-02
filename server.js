@@ -6,6 +6,7 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+import { sendEmail } from "./utils/sendEmail.js";
 const { Pool } = require("pg");
 
 const app = express();
@@ -68,33 +69,27 @@ app.post("/api/send-otp", async (req, res) => {
   try {
     const { phone } = req.body;
 
-    console.log("Phone nhận được:", phone);
-
     const result = await pool.query(
       "SELECT email FROM bookings WHERE phone_number = $1 LIMIT 1",
       [phone]
     );
 
-    console.log("Query result:", result.rows);
-
     if (result.rows.length === 0) {
-      console.log("Không tìm thấy");
       return res.status(404).json({ message: "Không tìm thấy lịch" });
     }
 
     const email = result.rows[0].email;
 
-    console.log("Email lấy được:", email);
+    const otp = Math.floor(100000 + Math.random() * 900000);
 
-    return res.json({
-      message: "Test OK",
-      email: email
-    });
+    await sendEmail(email, otp);
+
+    res.json({ message: "OTP sent" });
 
   } catch (err) {
-  console.error("Lỗi send-otp:", err);
-  return res.status(500).json({ error: err.message });
-}
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 app.post("/api/verify-otp", async (req, res) => {
   try {
