@@ -89,7 +89,7 @@ app.post("/api/send-otp", async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000);
     console.log("OTP tạo ra:", otp);
 
-    const response = await resend.emails.send({
+    const response = await sendEmail({
       from: "onboarding@resend.dev",
       to: email,
       subject: "Test OTP",
