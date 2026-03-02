@@ -102,18 +102,27 @@ app.post("/api/verify-otp", async (req, res) => {
   try {
     const { phone, otp } = req.body;
 
-    if (otpStore[phone] != otp)
+    // kiểm tra tồn tại
+    if (!otpStore[phone]) {
+      return res.status(400).json({ message: "OTP đã hết hạn hoặc không tồn tại" });
+    }
+
+    // so sánh đúng kiểu
+    if (String(otpStore[phone]) !== String(otp)) {
       return res.status(400).json({ message: "Mã OTP không đúng" });
+    }
 
     const result = await pool.query(
       "SELECT * FROM bookings WHERE phone_number = $1",
       [phone]
     );
 
-    delete otpStore[phone];
+    delete otpStore[phone]; // xóa sau khi dùng
+
     res.json(result.rows);
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 });
