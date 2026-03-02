@@ -24,49 +24,6 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-
-// ================= OTP =================
-
-// app.post("/api/send-otp", async (req, res) => {
-//   try {
-//     const { phone } = req.body;
-
-//     const result = await pool.query(
-//       "SELECT email FROM bookings WHERE phone_number = $1 LIMIT 1",
-//       [phone]
-//     );
-
-//     if (result.rows.length === 0)
-//       return res.status(404).json({ message: "Không tìm thấy lịch" });
-
-//     const email = result.rows[0].email;
-//     const otp = Math.floor(100000 + Math.random() * 900000);
-//     otpStore[phone] = otp;
-
-//     const transporter = nodemailer.createTransport({
-//       host: "smtp.gmail.com",
-//       port: 465,
-//       secure: true,
-//       auth: {
-//         user: process.env.EMAIL_USER,
-//         pass: process.env.EMAIL_PASS,
-//       },
-//     });
-
-//     await transporter.sendMail({
-//       from: "NMT Repair",
-//       to: email,
-//       subject: "Mã xác nhận xem lịch sửa chữa",
-//       text: `Mã OTP của bạn là: ${otp}`,
-//     });
-
-//     res.json({ message: "Đã gửi mã xác nhận" });
-
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Server error" });
-//   }
-// });
 app.post("/api/send-otp", async (req, res) => {
   try {
     const { phone } = req.body;
@@ -90,6 +47,14 @@ app.post("/api/send-otp", async (req, res) => {
     console.log("OTP tạo ra:", otp);
 
     await sendEmail(email, otp);
+    // 🔥 BẮT BUỘC PHẢI LƯU
+    otpStore[phone] = otp;
+
+    // 🔥 TỰ ĐỘNG HẾT HẠN SAU 60 GIÂY
+    setTimeout(() => {
+      delete otpStore[phone];
+    }, 60000);
+
 
     res.json({ message: "OTP sent" });
 
