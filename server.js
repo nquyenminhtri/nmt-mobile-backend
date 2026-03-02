@@ -270,7 +270,45 @@ app.get("/api/admin/status-summary", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+app.get("/api/admin/users", verifyToken, async (req, res) => {
+  try {
+    // kiểm tra quyền
+    if (req.user.role !== "manager") {
+      return res.status(403).json({ message: "Không có quyền" });
+    }
 
+    const result = await pool.query(`
+      SELECT id, username, full_name, phone_number, role
+      FROM users
+      ORDER BY id ASC
+    `);
+
+    res.json(result.rows);
+
+  } catch (err) {
+    console.error("Users error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+app.get("/api/admin/bookings", verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== "manager") {
+      return res.status(403).json({ message: "Không có quyền" });
+    }
+
+    const result = await pool.query(`
+      SELECT *
+      FROM bookings
+      ORDER BY id DESC
+    `);
+
+    res.json(result.rows);
+
+  } catch (err) {
+    console.error("Bookings error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 // ================= SERVER =================
 
 const PORT = process.env.PORT || 5000;
