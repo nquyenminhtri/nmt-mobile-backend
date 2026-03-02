@@ -219,6 +219,50 @@ app.get("/api/admin/dashboard", async (req, res) => {
   }
 });
 
+app.get("/api/admin/new-bookings", (req, res) => {
+  const sql = `
+    SELECT id, customer_name
+    FROM bookings
+    WHERE status = 'Chờ Xác Nhận'
+    ORDER BY created_at DESC
+    LIMIT 5
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json(err);
+    res.json(results);
+  });
+});
+// Lấy doanh thu 7 ngày 
+app.get("/api/admin/revenue-7days", (req, res) => {
+  const sql = `
+  SELECT DATE(completed_at) as date,
+         SUM(repair_price) as total
+  FROM bookings
+  WHERE status = 'Hoàn Thành'
+  AND completed_at IS NOT NULL
+  AND completed_at >= CURDATE() - INTERVAL 7 DAY
+  GROUP BY DATE(completed_at)
+  ORDER BY date ASC
+`;
+
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json(err);
+    res.json(results);
+  });
+});
+app.get("/api/admin/status-summary", (req, res) => {
+  const sql = `
+    SELECT status, COUNT(*) as total
+    FROM bookings
+    GROUP BY status
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json(err);
+    res.json(results);
+  });
+});
 
 // ================= SERVER =================
 
