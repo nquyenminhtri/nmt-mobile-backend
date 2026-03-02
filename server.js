@@ -24,47 +24,78 @@ const pool = new Pool({
 
 // ================= OTP =================
 
+// app.post("/api/send-otp", async (req, res) => {
+//   try {
+//     const { phone } = req.body;
+
+//     const result = await pool.query(
+//       "SELECT email FROM bookings WHERE phone_number = $1 LIMIT 1",
+//       [phone]
+//     );
+
+//     if (result.rows.length === 0)
+//       return res.status(404).json({ message: "Không tìm thấy lịch" });
+
+//     const email = result.rows[0].email;
+//     const otp = Math.floor(100000 + Math.random() * 900000);
+//     otpStore[phone] = otp;
+
+//     const transporter = nodemailer.createTransport({
+//       host: "smtp.gmail.com",
+//       port: 465,
+//       secure: true,
+//       auth: {
+//         user: process.env.EMAIL_USER,
+//         pass: process.env.EMAIL_PASS,
+//       },
+//     });
+
+//     await transporter.sendMail({
+//       from: "NMT Repair",
+//       to: email,
+//       subject: "Mã xác nhận xem lịch sửa chữa",
+//       text: `Mã OTP của bạn là: ${otp}`,
+//     });
+
+//     res.json({ message: "Đã gửi mã xác nhận" });
+
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Server error" });
+//   }
+// });
 app.post("/api/send-otp", async (req, res) => {
   try {
     const { phone } = req.body;
+
+    console.log("Phone nhận được:", phone);
 
     const result = await pool.query(
       "SELECT email FROM bookings WHERE phone_number = $1 LIMIT 1",
       [phone]
     );
 
-    if (result.rows.length === 0)
+    console.log("Query result:", result.rows);
+
+    if (result.rows.length === 0) {
+      console.log("Không tìm thấy");
       return res.status(404).json({ message: "Không tìm thấy lịch" });
+    }
 
     const email = result.rows[0].email;
-    const otp = Math.floor(100000 + Math.random() * 900000);
-    otpStore[phone] = otp;
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
+    console.log("Email lấy được:", email);
+
+    return res.json({
+      message: "Test OK",
+      email: email
     });
-
-    await transporter.sendMail({
-      from: "NMT Repair",
-      to: email,
-      subject: "Mã xác nhận xem lịch sửa chữa",
-      text: `Mã OTP của bạn là: ${otp}`,
-    });
-
-    res.json({ message: "Đã gửi mã xác nhận" });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
-  }
+  console.error("Lỗi send-otp:", err);
+  return res.status(500).json({ error: err.message });
+}
 });
-
 app.post("/api/verify-otp", async (req, res) => {
   try {
     const { phone, otp } = req.body;
