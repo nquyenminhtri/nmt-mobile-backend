@@ -47,7 +47,7 @@ app.post("/api/send-otp", async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000);
     console.log("OTP tạo ra:", otp);
 
-    await sendEmail(email, otp);
+    await sendEmail(email, otp, "history");
     // 🔥 BẮT BUỘC PHẢI LƯU
     otpStore[phone] = otp;
 
@@ -122,7 +122,7 @@ app.post("/api/send-booking-otp", async (req, res) => {
 
     const otp = Math.floor(100000 + Math.random() * 900000);
 
-    await sendEmail(email, otp);
+    await sendEmail(email, otp, "booking");
 
     // Lưu OTP
     bookingOtpStore[email] = {
@@ -232,6 +232,15 @@ app.post("/api/bookings", async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6)`,
       [customer_name, phone_number, email, device_model, repair_issue, appointment_date]
     );
+    // 🔥 GỬI MAIL XÁC NHẬN
+    await sendEmail(email, null, "booking_success", {
+      customer_name,
+      phone_number,
+      email,
+      device_model,
+      repair_issue,
+      appointment_date,
+    });
 
     // 5️⃣ Xóa quyền verify (chỉ dùng 1 lần)
     delete verifiedEmails[email];
