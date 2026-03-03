@@ -115,38 +115,28 @@ app.post("/api/send-booking-otp", async (req, res) => {
       return res.status(400).json({ message: "Thiếu email" });
     }
 
-    // 🔥 Chống spam gửi liên tục
-    if (bookingOtpStore[email]?.cooldown) {
-      return res.status(429).json({ message: "Vui lòng chờ trước khi gửi lại OTP" });
-    }
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    const otp = Math.floor(100000 + Math.random() * 900000);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 phút
+
+    // Upsert OTP (nếu đã tồn tại thì cập nhật)
+    await pool.query(`
+      INSERT INTO booking_otps (email, otp, expires_at, verified)
+      VALUES ($1, $2, $3, false)
+      ON CONFLICT (email)
+      DO UPDATE SET
+        otp = EXCLUDED.otp,
+        expires_at = EXCLUDED.expires_at,
+        verified = false,
+        created_at = CURRENT_TIMESTAMP
+    `, [email, otp, expiresAt]);
 
     await sendEmail(email, otp, "booking");
-
-    // Lưu OTP
-    bookingOtpStore[email] = {
-      otp,
-      expiresAt: Date.now() + 5 * 60 * 1000, // 5 phút
-      cooldown: true,
-    };
-
-    // Hết hạn OTP
-    setTimeout(() => {
-      delete bookingOtpStore[email];
-    }, 5 * 60 * 1000);
-
-    // Cooldown 60 giây chống spam
-    setTimeout(() => {
-      if (bookingOtpStore[email]) {
-        bookingOtpStore[email].cooldown = false;
-      }
-    }, 60000);
 
     res.json({ message: "OTP sent" });
 
   } catch (err) {
-    console.error("Booking OTP error:", err);
+    console.error("Send OTP error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -154,31 +144,36 @@ app.post("/api/verify-booking-otp", async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    if (!bookingOtpStore[email]) {
-      return res.status(400).json({ message: "OTP đã hết hạn hoặc không tồn tại" });
+    const result = await pool.query(
+      "SELECT * FROM booking_otps WHERE email = $1",
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: "OTP không tồn tại" });
     }
 
-    const storedData = bookingOtpStore[email];
+    const record = result.rows[0];
 
-    if (Date.now() > storedData.expiresAt) {
-      delete bookingOtpStore[email];
+    if (new Date() > new Date(record.expires_at)) {
+      await pool.query("DELETE FROM booking_otps WHERE email = $1", [email]);
       return res.status(400).json({ message: "OTP đã hết hạn" });
     }
 
-    if (String(storedData.otp) !== String(otp)) {
+    if (record.otp !== otp) {
       return res.status(400).json({ message: "OTP không đúng" });
     }
 
-    // 🔥 đánh dấu đã xác thực
-    verifiedEmails[email] = true;
-
-    // xóa OTP
-    delete bookingOtpStore[email];
+    // Đánh dấu đã verify
+    await pool.query(
+      "UPDATE booking_otps SET verified = true WHERE email = $1",
+      [email]
+    );
 
     res.json({ message: "Xác thực thành công" });
 
   } catch (err) {
-    console.error("Verify booking OTP error:", err);
+    console.error("Verify OTP error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -201,8 +196,13 @@ app.post("/api/bookings", async (req, res) => {
       });
     }
 
-    // 2️⃣ Chặn nếu chưa verify
-    if (!verifiedEmails[email]) {
+    // 2️⃣ Kiểm tra email đã verify trong DB chưa
+    const checkVerify = await pool.query(
+      "SELECT * FROM booking_otps WHERE email = $1 AND verified = true",
+      [email]
+    );
+
+    if (checkVerify.rows.length === 0) {
       return res.status(403).json({
         message: "Bạn cần xác thực email trước khi đặt lịch",
       });
@@ -225,14 +225,21 @@ app.post("/api/bookings", async (req, res) => {
       });
     }
 
-    // 4️⃣ Insert DB
+    // 4️⃣ Insert booking
     await pool.query(
       `INSERT INTO bookings
        (customer_name, phone_number, email, device_model, repair_issue, appointment_date)
        VALUES ($1,$2,$3,$4,$5,$6)`,
       [customer_name, phone_number, email, device_model, repair_issue, appointment_date]
     );
-    // 🔥 GỬI MAIL XÁC NHẬN
+
+    // 5️⃣ Xóa OTP sau khi dùng (1 lần duy nhất)
+    await pool.query(
+      "DELETE FROM booking_otps WHERE email = $1",
+      [email]
+    );
+
+    // 6️⃣ Gửi mail xác nhận
     await sendEmail(email, null, "booking_success", {
       customer_name,
       phone_number,
@@ -241,9 +248,6 @@ app.post("/api/bookings", async (req, res) => {
       repair_issue,
       appointment_date,
     });
-
-    // 5️⃣ Xóa quyền verify (chỉ dùng 1 lần)
-    delete verifiedEmails[email];
 
     res.json({ message: "Đặt lịch thành công" });
 
