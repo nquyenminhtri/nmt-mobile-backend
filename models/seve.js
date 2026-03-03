@@ -11,7 +11,7 @@ require('dotenv').config();
 
 
 
-const bookingRoutes = require('./bookingRoutes.js');
+const bookingRoutes = require('../routes/bookingRoutes.js');
 const sendBookingEmail = require("../utils/sendEmail.js");
 
 const app = express();

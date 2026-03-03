@@ -17,7 +17,7 @@ app.use(express.json());
 
 const SECRET_KEY = "nmt_secret_key";
 const otpStore = {};
-
+const bookingOtpStore = {};
 // PostgreSQL Pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -106,6 +106,78 @@ app.post("/api/verify-otp", async (req, res) => {
 
 
 // ================= BOOKING =================
+app.post("/api/send-booking-otp", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Thiếu email" });
+    }
+
+    // 🔥 Chống spam gửi liên tục
+    if (bookingOtpStore[email]?.cooldown) {
+      return res.status(429).json({ message: "Vui lòng chờ trước khi gửi lại OTP" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000);
+
+    await sendEmail(email, otp);
+
+    // Lưu OTP
+    bookingOtpStore[email] = {
+      otp,
+      expiresAt: Date.now() + 5 * 60 * 1000, // 5 phút
+      cooldown: true,
+    };
+
+    // Hết hạn OTP
+    setTimeout(() => {
+      delete bookingOtpStore[email];
+    }, 5 * 60 * 1000);
+
+    // Cooldown 60 giây chống spam
+    setTimeout(() => {
+      if (bookingOtpStore[email]) {
+        bookingOtpStore[email].cooldown = false;
+      }
+    }, 60000);
+
+    res.json({ message: "OTP sent" });
+
+  } catch (err) {
+    console.error("Booking OTP error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+app.post("/api/verify-booking-otp", async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!bookingOtpStore[email]) {
+      return res.status(400).json({ message: "OTP đã hết hạn hoặc không tồn tại" });
+    }
+
+    const storedData = bookingOtpStore[email];
+
+    if (Date.now() > storedData.expiresAt) {
+      delete bookingOtpStore[email];
+      return res.status(400).json({ message: "OTP đã hết hạn" });
+    }
+
+    if (String(storedData.otp) !== String(otp)) {
+      return res.status(400).json({ message: "OTP không đúng" });
+    }
+
+    // Xóa sau khi xác thực
+    delete bookingOtpStore[email];
+
+    res.json({ message: "Xác thực thành công" });
+
+  } catch (err) {
+    console.error("Verify booking OTP error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 app.post("/api/bookings", async (req, res) => {
   try {
