@@ -15,10 +15,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+
 const SECRET_KEY = "nmt_secret_key";
 const otpStore = {};
 const bookingOtpStore = {};
 const verifiedEmails = {};
+
 // PostgreSQL Pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -221,7 +223,16 @@ app.post("/api/bookings", async (req, res) => {
       repair_issue,
       appointment_date,
     } = req.body;
+    const phoneRegex = /^(0[0-9]{8,10})$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+    if (!phoneRegex.test(phone_number)) {
+      return res.status(400).json({ message: "Số điện thoại không hợp lệ" });
+    }
+
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Email không hợp lệ" });
+    }
     // 1️⃣ Kiểm tra thiếu dữ liệu
     if (!customer_name || !phone_number || !email || !appointment_date) {
       return res.status(400).json({
