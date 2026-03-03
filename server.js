@@ -27,41 +27,54 @@ const pool = new Pool({
 
 app.post("/api/send-otp", async (req, res) => {
   try {
-    const { phone } = req.body;
-    console.log("Phone nhận được:", phone);
+    const { contact } = req.body;
 
-    const result = await pool.query(
-      "SELECT email FROM bookings WHERE phone_number = $1 LIMIT 1",
-      [phone]
-    );
+    if (!contact) {
+      return res.status(400).json({ message: "Thiếu thông tin" });
+    }
 
-    console.log("Query result:", result.rows);
+    // Kiểm tra là email hay số điện thoại
+    const isEmail = contact.includes("@");
+
+    let result;
+
+    if (isEmail) {
+      result = await pool.query(
+        "SELECT email FROM bookings WHERE email = $1 LIMIT 1",
+        [contact]
+      );
+    } else {
+      result = await pool.query(
+        "SELECT email FROM bookings WHERE phone_number = $1 LIMIT 1",
+        [contact]
+      );
+    }
 
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "Không tìm thấy lịch" });
     }
 
     const email = result.rows[0].email;
-    console.log("Email lấy từ DB:", email);
 
-    const otp = Math.floor(100000 + Math.random() * 900000);
-    console.log("OTP tạo ra:", otp);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    await pool.query(`
+      INSERT INTO history_otps (contact, otp, expires_at)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (contact)
+      DO UPDATE SET
+        otp = EXCLUDED.otp,
+        expires_at = EXCLUDED.expires_at
+    `, [contact, otp, expiresAt]);
 
     await sendEmail(email, otp, "history");
-    // 🔥 BẮT BUỘC PHẢI LƯU
-    otpStore[phone] = otp;
-
-    // 🔥 TỰ ĐỘNG HẾT HẠN SAU 60 GIÂY
-    setTimeout(() => {
-      delete otpStore[phone];
-    }, 60000);
-
 
     res.json({ message: "OTP sent" });
 
   } catch (err) {
-    console.error("FULL ERROR:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Send OTP error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 function verifyToken(req, res, next) {
@@ -78,34 +91,54 @@ function verifyToken(req, res, next) {
 }
 app.post("/api/verify-otp", async (req, res) => {
   try {
-    const { phone, otp } = req.body;
-
-    // kiểm tra tồn tại
-    if (!otpStore[phone]) {
-      return res.status(400).json({ message: "OTP đã hết hạn hoặc không tồn tại" });
-    }
-
-    // so sánh đúng kiểu
-    if (String(otpStore[phone]) !== String(otp)) {
-      return res.status(400).json({ message: "Mã OTP không đúng" });
-    }
+    const { contact, otp } = req.body;
 
     const result = await pool.query(
-      "SELECT * FROM bookings WHERE phone_number = $1",
-      [phone]
+      "SELECT * FROM history_otps WHERE contact = $1",
+      [contact]
     );
 
-    delete otpStore[phone]; // xóa sau khi dùng
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: "OTP không tồn tại" });
+    }
 
-    res.json(result.rows);
+    const record = result.rows[0];
+
+    if (new Date() > new Date(record.expires_at)) {
+      await pool.query("DELETE FROM history_otps WHERE contact = $1", [contact]);
+      return res.status(400).json({ message: "OTP đã hết hạn" });
+    }
+
+    if (record.otp !== otp) {
+      return res.status(400).json({ message: "OTP không đúng" });
+    }
+
+    // Lấy booking theo contact
+    const isEmail = contact.includes("@");
+
+    let bookings;
+
+    if (isEmail) {
+      bookings = await pool.query(
+        "SELECT * FROM bookings WHERE email = $1 ORDER BY created_at DESC",
+        [contact]
+      );
+    } else {
+      bookings = await pool.query(
+        "SELECT * FROM bookings WHERE phone_number = $1 ORDER BY created_at DESC",
+        [contact]
+      );
+    }
+
+    await pool.query("DELETE FROM history_otps WHERE contact = $1", [contact]);
+
+    res.json(bookings.rows);
 
   } catch (err) {
-    console.error(err);
+    console.error("Verify OTP error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
-
-
 // ================= BOOKING =================
 app.post("/api/send-booking-otp", async (req, res) => {
   try {
