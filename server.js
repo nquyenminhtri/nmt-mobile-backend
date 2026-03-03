@@ -354,8 +354,72 @@ app.post("/api/login", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+app.put("/api/cancel-booking/:id", async (req, res) => {
+  try {
+    const bookingId = req.params.id;
 
+    const result = await pool.query(
+      `
+      UPDATE bookings 
+      SET status = 'Đã Hủy'
+      WHERE id = $1 
+      AND status IN ('Chờ Xác Nhận', 'Đang Sửa')
+      RETURNING *
+      `,
+      [bookingId]
+    );
 
+    if (result.rowCount === 0) {
+      return res.status(400).json({
+        message: "Không thể huỷ lịch hoặc lịch không tồn tại",
+      });
+    }
+
+    res.json({ message: "Đã huỷ lịch thành công" });
+
+  } catch (err) {
+    console.error("Cancel booking error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.put("/api/bookings/:id/quote", async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const { repair_price, admin_note } = req.body;
+
+    // 1️⃣ Kiểm tra giá hợp lệ
+    if (!repair_price || repair_price <= 0) {
+      return res.status(400).json({
+        message: "Giá sửa chữa không hợp lệ",
+      });
+    }
+
+    const result = await pool.query(
+      `
+      UPDATE bookings
+      SET repair_price = $1,
+          admin_note = $2,
+          status = 'Đang Sửa'
+      WHERE id = $3
+      RETURNING *
+      `,
+      [repair_price, admin_note, bookingId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        message: "Không tìm thấy đơn cần cập nhật",
+      });
+    }
+
+    res.json({ message: "Đã cập nhật báo giá" });
+
+  } catch (err) {
+    console.error("Quote update error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 // ================= DASHBOARD =================
 
 app.get("/api/admin/dashboard", async (req, res) => {
