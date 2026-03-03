@@ -67,7 +67,7 @@ export const sendEmail = async (to, otp, type = "history", bookingInfo = null) =
             </p>
 
             <div style="margin-top:25px; text-align:center;">
-              <a href="https://nmtfix.com"
+              <a href="https://nmtfix.vercel.app"
                 style="background:#2563eb; color:white; padding:10px 18px; text-decoration:none; border-radius:6px; display:inline-block;">
                 Truy cập website
               </a>
