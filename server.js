@@ -420,8 +420,43 @@ app.put("/api/bookings/:id/quote", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-// ================= DASHBOARD =================
 
+// ================= DASHBOARD =================
+app.put("/api/bookings/:id/complete", async (req, res) => {
+  try {
+    const bookingId = parseInt(req.params.id, 10);
+
+    if (isNaN(bookingId)) {
+      return res.status(400).json({
+        message: "ID không hợp lệ",
+      });
+    }
+
+    const result = await pool.query(
+      `
+      UPDATE bookings
+      SET status = 'Hoàn Thành',
+          completed_at = NOW()
+      WHERE id = $1
+      AND status = 'Đang Sửa'
+      RETURNING *
+      `,
+      [bookingId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(400).json({
+        message: "Không thể hoàn thành đơn này",
+      });
+    }
+
+    res.json({ message: "Đã hoàn thành đơn" });
+
+  } catch (err) {
+    console.error("Complete booking error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 app.get("/api/admin/dashboard", async (req, res) => {
   try {
     const total = await pool.query("SELECT COUNT(*) FROM bookings");
