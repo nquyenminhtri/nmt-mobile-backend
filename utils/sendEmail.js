@@ -86,7 +86,7 @@ export const sendEmail = async (to, otp, type = "history", bookingInfo = null) =
     if (type === "booking_success" && bookingInfo) {
       try {
         await resend.emails.send({
-          from: "NMT Repair <onboarding@resend.dev>",
+          from: "NMT Fix <onboarding@resend.dev>",
           to: "nmtri102work@gmail.com", // mail doanh nghiệp
           subject: "🔔 Có đơn đặt lịch mới",
           html: `
@@ -104,7 +104,7 @@ export const sendEmail = async (to, otp, type = "history", bookingInfo = null) =
 
               <hr/>
               <p style="color:gray; font-size:12px;">
-                Email này được gửi tự động từ hệ thống NMT Repair
+                Email này được gửi tự động từ hệ thống NMT Fix
               </p>
             </div>
           `,
@@ -116,7 +116,7 @@ export const sendEmail = async (to, otp, type = "history", bookingInfo = null) =
     }
 
     const data = await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: "NMT Fix <onboarding@resend.dev>",
       to,
       subject,
       html: htmlContent,
