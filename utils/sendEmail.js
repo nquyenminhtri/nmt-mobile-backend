@@ -31,25 +31,56 @@ export const sendEmail = async (to, otp, type = "history", bookingInfo = null) =
 
     // ===== MAIL XÁC NHẬN ĐẶT LỊCH =====
     if (type === "booking_success" && bookingInfo) {
-      subject = "Xác nhận đặt lịch thành công";
+      subject = "Xác nhận đặt lịch sửa chữa thành công";
+
+      // format ngày giờ đẹp
+      const formattedDate = new Date(bookingInfo.appointment_date)
+        .toLocaleString("vi-VN");
 
       htmlContent = `
-        <h2>🎉 Đặt lịch thành công</h2>
-        <p>Xin chào <strong>${bookingInfo.customer_name}</strong>,</p>
+      <div style="font-family: Arial, sans-serif; background:#f4f6f9; padding:20px;">
+        
+        <div style="max-width:600px; margin:auto; background:white; border-radius:10px; overflow:hidden; box-shadow:0 5px 15px rgba(0,0,0,0.08);">
 
-        <p>Chúng tôi đã nhận được yêu cầu sửa chữa của bạn với thông tin sau:</p>
+          <!-- HEADER -->
+          <div style="background:linear-gradient(90deg,#2563eb,#3b82f6); padding:20px; color:white; text-align:center;">
+            <h1 style="margin:0;">NMT Repair</h1>
+            <p style="margin:5px 0 0;">Xác nhận đặt lịch thành công</p>
+          </div>
 
-        <ul>
-          <li><strong>Số điện thoại:</strong> ${bookingInfo.phone_number}</li>
-          <li><strong>Email:</strong> ${bookingInfo.email}</li>
-          <li><strong>Thiết bị:</strong> ${bookingInfo.device_model}</li>
-          <li><strong>Lỗi:</strong> ${bookingInfo.repair_issue}</li>
-          <li><strong>Ngày hẹn:</strong> ${bookingInfo.appointment_date}</li>
-        </ul>
+          <!-- BODY -->
+          <div style="padding:25px; color:#333;">
+            <p>Xin chào <strong>${bookingInfo.customer_name}</strong>,</p>
 
-        <p>Chúng tôi sẽ liên hệ với bạn sớm nhất.</p>
+            <p>Cảm ơn bạn đã tin tưởng dịch vụ của chúng tôi. Dưới đây là thông tin đặt lịch của bạn:</p>
 
-        <p>Trân trọng,<br/>NMT Repair</p>
+            <div style="background:#f9fafb; padding:15px; border-radius:8px; margin-top:15px;">
+              <p><strong>📱 Thiết bị:</strong> ${bookingInfo.device_model}</p>
+              <p><strong>🔧 Lỗi mô tả:</strong> ${bookingInfo.repair_issue}</p>
+              <p><strong>📅 Ngày hẹn:</strong> ${formattedDate}</p>
+              <p><strong>📞 SĐT:</strong> ${bookingInfo.phone_number}</p>
+              <p><strong>📧 Email:</strong> ${bookingInfo.email}</p>
+            </div>
+
+            <p style="margin-top:20px;">
+              Chúng tôi sẽ liên hệ với bạn sớm nhất để xác nhận tình trạng máy.
+            </p>
+
+            <div style="margin-top:25px; text-align:center;">
+              <a href="https://nmtfix.com"
+                style="background:#2563eb; color:white; padding:10px 18px; text-decoration:none; border-radius:6px; display:inline-block;">
+                Truy cập website
+              </a>
+            </div>
+          </div>
+
+          <!-- FOOTER -->
+          <div style="background:#f1f5f9; padding:15px; text-align:center; font-size:12px; color:#666;">
+            © ${new Date().getFullYear()} NMT Repair. All rights reserved.
+          </div>
+
+        </div>
+      </div>
       `;
     }
 
