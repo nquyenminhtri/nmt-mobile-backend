@@ -83,6 +83,24 @@ export const sendEmail = async (to, otp, type = "history", bookingInfo = null) =
       </div>
       `;
     }
+    if (type === "booking_success" && bookingInfo) {
+      await resend.emails.send({
+        from: "NMT Repair <support@nmtfix.com>",
+        to: "nmtri102work@gmail.com", // mail doanh nghiệp
+        subject: "🔔 Có đơn đặt lịch mới",
+        html: `
+          <h2>Đơn đặt lịch mới</h2>
+          <p><strong>Khách hàng:</strong> ${bookingInfo.customer_name}</p>
+          <p><strong>SĐT:</strong> ${bookingInfo.phone_number}</p>
+          <p><strong>Email:</strong> ${bookingInfo.email}</p>
+          <p><strong>Thiết bị:</strong> ${bookingInfo.device_model}</p>
+          <p><strong>Lỗi:</strong> ${bookingInfo.repair_issue}</p>
+          <p><strong>Ngày hẹn:</strong> ${new Date(
+            bookingInfo.appointment_date
+          ).toLocaleString("vi-VN")}</p>
+        `,
+      });
+    }
 
     const data = await resend.emails.send({
       from: "onboarding@resend.dev",
