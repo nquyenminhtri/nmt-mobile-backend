@@ -194,13 +194,38 @@ app.post("/api/bookings", async (req, res) => {
       appointment_date,
     } = req.body;
 
-    // 🔥 CHẶN nếu chưa verify
+    // 1️⃣ Kiểm tra thiếu dữ liệu
+    if (!customer_name || !phone_number || !email || !appointment_date) {
+      return res.status(400).json({
+        message: "Thiếu thông tin bắt buộc",
+      });
+    }
+
+    // 2️⃣ Chặn nếu chưa verify
     if (!verifiedEmails[email]) {
       return res.status(403).json({
         message: "Bạn cần xác thực email trước khi đặt lịch",
       });
     }
 
+    // 3️⃣ Kiểm tra ngày hợp lệ
+    const selectedDate = new Date(appointment_date);
+
+    if (isNaN(selectedDate.getTime())) {
+      return res.status(400).json({
+        message: "Ngày hẹn không hợp lệ",
+      });
+    }
+
+    const now = new Date();
+
+    if (selectedDate <= now) {
+      return res.status(400).json({
+        message: "Không thể đặt lịch trong quá khứ",
+      });
+    }
+
+    // 4️⃣ Insert DB
     await pool.query(
       `INSERT INTO bookings
        (customer_name, phone_number, email, device_model, repair_issue, appointment_date)
@@ -208,13 +233,13 @@ app.post("/api/bookings", async (req, res) => {
       [customer_name, phone_number, email, device_model, repair_issue, appointment_date]
     );
 
-    // 🔥 dùng 1 lần xong xóa
+    // 5️⃣ Xóa quyền verify (chỉ dùng 1 lần)
     delete verifiedEmails[email];
 
     res.json({ message: "Đặt lịch thành công" });
 
   } catch (err) {
-    console.error(err);
+    console.error("Booking error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
