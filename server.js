@@ -18,6 +18,7 @@ app.use(express.json());
 const SECRET_KEY = "nmt_secret_key";
 const otpStore = {};
 const bookingOtpStore = {};
+const verifiedEmails = {};
 // PostgreSQL Pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -168,7 +169,10 @@ app.post("/api/verify-booking-otp", async (req, res) => {
       return res.status(400).json({ message: "OTP không đúng" });
     }
 
-    // Xóa sau khi xác thực
+    // 🔥 đánh dấu đã xác thực
+    verifiedEmails[email] = true;
+
+    // xóa OTP
     delete bookingOtpStore[email];
 
     res.json({ message: "Xác thực thành công" });
@@ -190,12 +194,22 @@ app.post("/api/bookings", async (req, res) => {
       appointment_date,
     } = req.body;
 
+    // 🔥 CHẶN nếu chưa verify
+    if (!verifiedEmails[email]) {
+      return res.status(403).json({
+        message: "Bạn cần xác thực email trước khi đặt lịch",
+      });
+    }
+
     await pool.query(
       `INSERT INTO bookings
        (customer_name, phone_number, email, device_model, repair_issue, appointment_date)
        VALUES ($1,$2,$3,$4,$5,$6)`,
       [customer_name, phone_number, email, device_model, repair_issue, appointment_date]
     );
+
+    // 🔥 dùng 1 lần xong xóa
+    delete verifiedEmails[email];
 
     res.json({ message: "Đặt lịch thành công" });
 
@@ -204,7 +218,6 @@ app.post("/api/bookings", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-
 app.get("/api/bookings/:phone", async (req, res) => {
   try {
     const result = await pool.query(
