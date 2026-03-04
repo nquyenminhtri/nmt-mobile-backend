@@ -587,6 +587,23 @@ app.get("/api/admin/bookings", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
+// Loại thiết bị
+app.get("/api/device-types", async (req, res) => {
+  const result = await pool.query("SELECT * FROM device_types ORDER BY name");
+  res.json(result.rows);
+});
+// lấy thiết bị theo loại 
+app.get("/api/devices/:typeId", async (req, res) => {
+  const { typeId } = req.params;
+
+  const result = await pool.query(
+    "SELECT * FROM devices WHERE device_type_id=$1 ORDER BY name",
+    [typeId]
+  );
+
+  res.json(result.rows);
+});
 // ================= SERVER =================
 
 const PORT = process.env.PORT || 5000;
