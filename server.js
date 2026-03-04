@@ -233,6 +233,11 @@ app.post("/api/bookings", async (req, res) => {
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: "Email không hợp lệ" });
     }
+    if (!device_model) {
+      return res.status(400).json({
+        message: "Thiết bị không được để trống"
+      });
+    }
     // 1️⃣ Kiểm tra thiếu dữ liệu
     if (!customer_name || !phone_number || !email || !appointment_date) {
       return res.status(400).json({
