@@ -590,7 +590,26 @@ app.get("/api/admin/bookings", verifyToken, async (req, res) => {
 
 // Loại thiết bị
 app.get("/api/device-types", async (req, res) => {
-  const result = await pool.query("SELECT * FROM device_types ORDER BY name");
+  const result = await pool.query(
+    "SELECT * FROM device_types ORDER BY name"
+  );
+
+  res.json(result.rows);
+});
+app.get("/api/devices/search", async (req, res) => {
+  const { q, typeId } = req.query;
+
+  const result = await pool.query(
+    `
+    SELECT * 
+    FROM devices
+    WHERE device_type_id = $1
+    AND name ILIKE $2
+    LIMIT 10
+    `,
+    [typeId, `%${q}%`]
+  );
+
   res.json(result.rows);
 });
 // lấy thiết bị theo loại 
