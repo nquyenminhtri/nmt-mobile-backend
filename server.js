@@ -639,11 +639,13 @@ app.get("/api/settings", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-app.put("/api/admin/settings", verifyToken, async (req, res) => {
+app.put("/api/settings", verifyToken, async (req, res) => {
   try {
 
     if (req.user.role !== "manager") {
-      return res.status(403).json({ message: "Không có quyền" });
+      return res.status(403).json({
+        message: "Không có quyền"
+      });
     }
 
     const {
@@ -652,54 +654,44 @@ app.put("/api/admin/settings", verifyToken, async (req, res) => {
       email,
       address,
       description,
-      logo_url,
-      banner_url,
-      working_hours,
-      google_map,
       facebook,
       zalo,
-      messenger
+      messenger,
+      google_map,
+      working_hours
     } = req.body;
 
     await pool.query(`
-      UPDATE settings
-      SET
-        site_name = $1,
-        phone = $2,
-        email = $3,
-        address = $4,
-        description = $5,
-        logo_url = $6,
-        banner_url = $7,
-        working_hours = $8,
-        google_map = $9,
-        facebook = $10,
-        zalo = $11,
-        messenger = $12
-      WHERE id = 1
-    `,
-    [
+      UPDATE settings SET
+      site_name=$1,
+      phone=$2,
+      email=$3,
+      address=$4,
+      description=$5,
+      facebook=$6,
+      zalo=$7,
+      messenger=$8,
+      google_map=$9,
+      working_hours=$10
+      WHERE id=1
+    `, [
       site_name,
       phone,
       email,
       address,
       description,
-      logo_url,
-      banner_url,
-      working_hours,
-      google_map,
       facebook,
       zalo,
-      messenger
+      messenger,
+      google_map,
+      working_hours
     ]);
 
     res.json({ message: "Cập nhật thành công" });
 
   } catch (err) {
-
     console.error(err);
     res.status(500).json({ error: "Server error" });
-
   }
 });
 // ================= SERVER =================
