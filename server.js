@@ -631,6 +631,35 @@ app.get("/api/devices/:typeId", async (req, res) => {
 app.get("/api/health", (req, res) => {
   res.send("server ok");
 });
+app.get("/api/settings", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM settings LIMIT 1");
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+app.put("/api/admin/settings", verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== "manager") {
+      return res.status(403).json({ message: "Không có quyền" });
+    }
+
+    const { site_name, phone, email, address, description } = req.body;
+
+    await pool.query(
+      `UPDATE settings
+       SET site_name=$1, phone=$2, email=$3, address=$4, description=$5
+       WHERE id=1`,
+      [site_name, phone, email, address, description]
+    );
+
+    res.json({ message: "Cập nhật thành công" });
+
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
 // ================= SERVER =================
 
 const PORT = process.env.PORT || 5000;
