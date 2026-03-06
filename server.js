@@ -699,6 +699,18 @@ app.post("/api/admin/users", async (req, res) => {
   try {
     const { username, password, full_name, phone_number, email, role } = req.body;
 
+     // 🔎 kiểm tra email đã tồn tại
+    const check = await pool.query(
+      "SELECT id FROM users WHERE email=$1",
+      [email]
+    );
+
+    if (check.rows.length > 0) {
+      return res.status(400).json({
+        message: "Email đã tồn tại"
+      });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
@@ -718,6 +730,18 @@ app.put("/api/admin/users/:id", async (req, res) => {
 try {
 
 const { username, full_name, phone_number, email, role } = req.body;
+
+// 🔎 kiểm tra email trùng
+const check = await pool.query(
+"SELECT id FROM users WHERE email=$1 AND id<>$2",
+[email, req.params.id]
+);
+
+if(check.rows.length > 0){
+return res.status(400).json({
+message:"Email đã tồn tại"
+});
+}
 
 const result = await pool.query(
 `UPDATE users
