@@ -561,7 +561,7 @@ app.get("/api/admin/users", verifyToken, async (req, res) => {
     }
 
     const result = await pool.query(`
-      SELECT id, username, full_name, phone_number, role
+      SELECT id, username, full_name, phone_number, role, email
       FROM users
       ORDER BY id ASC
     `);
@@ -714,20 +714,32 @@ app.post("/api/admin/users", async (req, res) => {
 });
 // sửa nhân viên 
 app.put("/api/admin/users/:id", async (req, res) => {
-  try {
-    const { username, full_name, phone_number, email, role } = req.body;
 
-    await pool.query(
-      `UPDATE users 
-       SET username=$1, full_name=$2, phone_number=$3, email=$4, role=$5
-       WHERE id=$6`,
-      [username, full_name, phone_number, email, role, req.params.id]
-    );
+try {
 
-    res.json({ message: "Updated" });
-  } catch (err) {
-    res.status(500).json(err.message);
-  }
+const { username, full_name, phone_number, email, role } = req.body;
+
+const result = await pool.query(
+`UPDATE users
+SET username=$1,
+full_name=$2,
+phone_number=$3,
+email=$4,
+role=$5
+WHERE id=$6
+RETURNING *`,
+[username, full_name, phone_number, email, role, req.params.id]
+);
+
+res.json(result.rows[0]);
+
+} catch (err) {
+
+console.log(err);
+res.status(500).json(err.message);
+
+}
+
 });
 // xóa nhân viên 
 app.delete("/api/admin/users/:id", async (req, res) => {
