@@ -641,23 +641,50 @@ app.get("/api/settings", async (req, res) => {
 });
 app.put("/api/admin/settings", verifyToken, async (req, res) => {
   try {
+
     if (req.user.role !== "manager") {
       return res.status(403).json({ message: "Không có quyền" });
     }
 
-    const { site_name, phone, email, address, description } = req.body;
+    const {
+      site_name,
+      phone,
+      email,
+      address,
+      description,
+      logo_url,
+      banner_url
+    } = req.body;
 
-    await pool.query(
-      `UPDATE settings
-       SET site_name=$1, phone=$2, email=$3, address=$4, description=$5
-       WHERE id=1`,
-      [site_name, phone, email, address, description]
-    );
+    await pool.query(`
+      UPDATE settings
+      SET
+        site_name = $1,
+        phone = $2,
+        email = $3,
+        address = $4,
+        description = $5,
+        logo_url = $6,
+        banner_url = $7
+      WHERE id = 1
+    `,
+    [
+      site_name,
+      phone,
+      email,
+      address,
+      description,
+      logo_url,
+      banner_url
+    ]);
 
     res.json({ message: "Cập nhật thành công" });
 
   } catch (err) {
+
+    console.error(err);
     res.status(500).json({ error: "Server error" });
+
   }
 });
 // ================= SERVER =================
