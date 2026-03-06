@@ -556,7 +556,7 @@ app.get("/api/admin/status-summary", async (req, res) => {
 app.get("/api/admin/users", verifyToken, async (req, res) => {
   try {
     // kiểm tra quyền
-    if (req.user.role !== "manager") {
+    if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Không có quyền" });
     }
 
@@ -575,7 +575,7 @@ app.get("/api/admin/users", verifyToken, async (req, res) => {
 });
 app.get("/api/admin/bookings", verifyToken, async (req, res) => {
   try {
-    if (req.user.role !== "manager") {
+    if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Không có quyền" });
     }
 
@@ -642,7 +642,7 @@ app.get("/api/settings", async (req, res) => {
 app.put("/api/admin/settings", verifyToken, async (req, res) => {
   try {
 
-    if (req.user.role !== "manager") {
+    if (req.user.role !== "admin") {
       return res.status(403).json({
         message: "Không có quyền"
       });
