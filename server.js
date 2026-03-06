@@ -628,6 +628,9 @@ app.get("/api/devices/:typeId", async (req, res) => {
 
   res.json(result.rows);
 });
+app.get("/api/health", (req, res) => {
+  res.send("server ok");
+});
 // ================= SERVER =================
 
 const PORT = process.env.PORT || 5000;
