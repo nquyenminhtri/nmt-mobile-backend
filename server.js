@@ -653,7 +653,12 @@ app.put("/api/admin/settings", verifyToken, async (req, res) => {
       address,
       description,
       logo_url,
-      banner_url
+      banner_url,
+      working_hours,
+      google_map,
+      facebook,
+      zalo,
+      messenger
     } = req.body;
 
     await pool.query(`
@@ -665,7 +670,12 @@ app.put("/api/admin/settings", verifyToken, async (req, res) => {
         address = $4,
         description = $5,
         logo_url = $6,
-        banner_url = $7
+        banner_url = $7,
+        working_hours = $8,
+        google_map = $9,
+        facebook = $10,
+        zalo = $11,
+        messenger = $12
       WHERE id = 1
     `,
     [
@@ -675,7 +685,12 @@ app.put("/api/admin/settings", verifyToken, async (req, res) => {
       address,
       description,
       logo_url,
-      banner_url
+      banner_url,
+      working_hours,
+      google_map,
+      facebook,
+      zalo,
+      messenger
     ]);
 
     res.json({ message: "Cập nhật thành công" });
