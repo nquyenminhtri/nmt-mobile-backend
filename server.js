@@ -694,6 +694,72 @@ app.put("/api/admin/settings", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+// thêm nhân viên 
+app.post("/api/admin/users", async (req, res) => {
+  try {
+    const { username, password, full_name, phone_number, email, role } = req.body;
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const result = await pool.query(
+      `INSERT INTO users (username,password,full_name,phone_number,email,role)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [username, hashedPassword, full_name, phone_number, email, role]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
+});
+// sửa nhân viên 
+app.put("/api/admin/users/:id", async (req, res) => {
+  try {
+    const { username, full_name, phone_number, email, role } = req.body;
+
+    await pool.query(
+      `UPDATE users 
+       SET username=$1, full_name=$2, phone_number=$3, email=$4, role=$5
+       WHERE id=$6`,
+      [username, full_name, phone_number, email, role, req.params.id]
+    );
+
+    res.json({ message: "Updated" });
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
+});
+// xóa nhân viên 
+app.delete("/api/admin/users/:id", async (req, res) => {
+  try {
+    await pool.query(
+      "DELETE FROM users WHERE id=$1",
+      [req.params.id]
+    );
+
+    res.json({ message: "Deleted" });
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
+});
+// đổi mật khẩu 
+app.put("/api/admin/users/change-password/:id", async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await pool.query(
+      `UPDATE users SET password=$1 WHERE id=$2`,
+      [hashedPassword, req.params.id]
+    );
+
+    res.json({ message: "Password updated" });
+
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
+});
 // ================= SERVER =================
 
 const PORT = process.env.PORT || 5000;
