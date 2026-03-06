@@ -639,7 +639,7 @@ app.get("/api/settings", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-app.put("/api/settings", verifyToken, async (req, res) => {
+app.put("/api/admin/settings", verifyToken, async (req, res) => {
   try {
 
     if (req.user.role !== "manager") {
