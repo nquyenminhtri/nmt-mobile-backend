@@ -911,6 +911,50 @@ res.status(500).json({error:"Server error"});
 }
 
 });
+
+// kiểm kê kho 
+app.post("/api/admin/stock-audit", async (req, res) => {
+
+try{
+
+const { part_id, actual_quantity } = req.body;
+
+// lấy tồn hệ thống
+const part = await pool.query(
+"SELECT quantity FROM parts WHERE id=$1",
+[part_id]
+);
+
+const systemQty = part.rows[0].quantity;
+
+const diff = actual_quantity - systemQty;
+
+// lưu kiểm kê
+await pool.query(
+`INSERT INTO stock_audits
+(part_id,system_quantity,actual_quantity,difference)
+VALUES ($1,$2,$3,$4)`,
+[part_id,systemQty,actual_quantity,diff]
+);
+
+// cập nhật lại tồn kho theo kiểm kê
+await pool.query(
+`UPDATE parts
+SET quantity=$1
+WHERE id=$2`,
+[actual_quantity,part_id]
+);
+
+res.json({message:"Kiểm kê thành công"});
+
+}catch(err){
+
+console.error(err);
+res.status(500).json({error:"Server error"});
+
+}
+
+});
 // ================= SERVER =================
 
 const PORT = process.env.PORT || 5000;
