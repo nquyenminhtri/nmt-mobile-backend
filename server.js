@@ -829,6 +829,37 @@ res.status(500).json(err.message);
 }
 
 });
+//api lưu linh kiện đã dùng
+app.post("/api/repair-parts", async (req, res) => {
+
+try {
+
+const { booking_id, part_id } = req.body;
+
+// lưu lịch sử linh kiện
+await pool.query(
+`INSERT INTO repair_parts_used (booking_id, part_id)
+VALUES ($1,$2)`,
+[booking_id, part_id]
+);
+
+// trừ kho
+await pool.query(
+`UPDATE parts
+SET quantity = quantity - 1
+WHERE id=$1 AND quantity > 0`,
+[part_id]
+);
+
+res.json({message:"Đã lưu linh kiện"});
+
+} catch(err){
+
+res.status(500).json(err.message);
+
+}
+
+});
 // ================= SERVER =================
 
 const PORT = process.env.PORT || 5000;
