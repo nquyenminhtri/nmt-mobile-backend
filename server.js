@@ -860,6 +860,52 @@ res.status(500).json(err.message);
 }
 
 });
+// api tạo phiếu nhập 
+app.post("/api/import-receipts", async (req, res) => {
+
+try {
+
+const { supplier, note, items } = req.body;
+
+// tạo phiếu nhập
+const receipt = await pool.query(
+`INSERT INTO import_receipts (supplier, note)
+VALUES ($1,$2)
+RETURNING id`,
+[supplier, note]
+);
+
+const receiptId = receipt.rows[0].id;
+
+// thêm chi tiết
+for(const item of items){
+
+await pool.query(
+`INSERT INTO import_receipt_items (receipt_id, part_id, quantity, price)
+VALUES ($1,$2,$3,$4)`,
+[receiptId, item.part_id, item.quantity, item.price]
+);
+
+// cập nhật tồn kho
+await pool.query(
+`UPDATE parts
+SET quantity = quantity + $1
+WHERE id = $2`,
+[item.quantity, item.part_id]
+);
+
+}
+
+res.json({message:"Tạo phiếu nhập thành công"});
+
+}catch(err){
+
+console.error(err);
+res.status(500).json({error:"Server error"});
+
+}
+
+});
 // ================= SERVER =================
 
 const PORT = process.env.PORT || 5000;
