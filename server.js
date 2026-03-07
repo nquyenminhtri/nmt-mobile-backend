@@ -869,10 +869,12 @@ const { supplier, note, items } = req.body;
 
 // tạo phiếu nhập
 const receipt = await pool.query(
-`INSERT INTO import_receipts (supplier, note)
+`
+INSERT INTO import_receipts (supplier,note)
 VALUES ($1,$2)
-RETURNING id`,
-[supplier, note]
+RETURNING id
+`,
+[supplier,note]
 );
 
 const receiptId = receipt.rows[0].id;
@@ -896,7 +898,10 @@ WHERE id = $2`,
 
 }
 
-res.json({message:"Tạo phiếu nhập thành công"});
+res.json({
+message:"Tạo phiếu nhập thành công",
+receipt_id: receiptId
+});
 
 }catch(err){
 
