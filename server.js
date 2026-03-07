@@ -912,6 +912,31 @@ res.status(500).json({error:"Server error"});
 
 });
 
+// lấy dữ liệu kho 
+app.get("/api/admin/inventory", async (req, res) => {
+
+try{
+
+const result = await pool.query(`
+SELECT 
+id,
+name,
+quantity
+FROM parts
+ORDER BY name
+`);
+
+res.json(result.rows);
+
+}catch(err){
+
+console.error(err);
+res.status(500).json({error:"Server error"});
+
+}
+
+});
+
 // kiểm kê kho 
 app.post("/api/admin/stock-audit", async (req, res) => {
 
