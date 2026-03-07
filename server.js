@@ -796,6 +796,39 @@ app.put("/api/admin/users/change-password/:id", async (req, res) => {
     res.status(500).json(err.message);
   }
 });
+// lấy linh kiện 
+app.get("/api/parts", async (req, res) => {
+  try {
+
+    const result = await pool.query(
+      "SELECT * FROM parts WHERE quantity > 0 ORDER BY name"
+    );
+
+    res.json(result.rows);
+
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+// trừ số lượng linh kiện trong kho 
+app.put("/api/parts/use/:id", async (req, res) => {
+
+try {
+
+await pool.query(
+`UPDATE parts
+SET quantity = quantity - 1
+WHERE id = $1 AND quantity > 0`,
+[req.params.id]
+);
+
+res.json({message:"Đã trừ linh kiện"});
+
+} catch(err){
+res.status(500).json(err.message);
+}
+
+});
 // ================= SERVER =================
 
 const PORT = process.env.PORT || 5000;
