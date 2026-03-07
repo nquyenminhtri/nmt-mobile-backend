@@ -810,6 +810,76 @@ app.get("/api/parts", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+// thêm linh kiện 
+app.post("/api/admin/parts", async(req,res)=>{
+
+try{
+
+const {name,price,quantity} = req.body;
+
+await pool.query(
+`INSERT INTO parts (name,price,quantity)
+VALUES ($1,$2,$3)`,
+[name,price,quantity]
+);
+
+res.json({message:"Thêm linh kiện thành công"});
+
+}catch(err){
+
+console.error(err);
+res.status(500).json({error:"Server error"});
+
+}
+
+});
+// sửa linh kiện 
+app.put("/api/admin/parts/:id", async(req,res)=>{
+
+try{
+
+const {id} = req.params;
+const {name,price,quantity} = req.body;
+
+await pool.query(
+`UPDATE parts
+SET name=$1,price=$2,quantity=$3
+WHERE id=$4`,
+[name,price,quantity,id]
+);
+
+res.json({message:"Cập nhật thành công"});
+
+}catch(err){
+
+console.error(err);
+res.status(500).json({error:"Server error"});
+
+}
+
+});
+// xóa linh kiện 
+app.delete("/api/admin/parts/:id", async(req,res)=>{
+
+try{
+
+const {id} = req.params;
+
+await pool.query(
+`DELETE FROM parts WHERE id=$1`,
+[id]
+);
+
+res.json({message:"Xóa thành công"});
+
+}catch(err){
+
+console.error(err);
+res.status(500).json({error:"Server error"});
+
+}
+
+});
 // trừ số lượng linh kiện trong kho 
 app.put("/api/parts/use/:id", async (req, res) => {
 
