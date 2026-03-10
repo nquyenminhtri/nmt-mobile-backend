@@ -1043,6 +1043,76 @@ WHERE id=$2
 res.json({message:"Kiểm kê thành công"});
 
 });
+//
+app.post("/api/visit", async (req, res) => {
+  try {
+
+    const ip =
+      req.headers["x-forwarded-for"] ||
+      req.socket.remoteAddress;
+
+    const existing = await pool.query(
+      `SELECT * FROM visitors
+       WHERE ip_address=$1
+       AND visited_at > NOW() - INTERVAL '10 minutes'`,
+      [ip]
+    );
+
+    if (existing.rows.length === 0) {
+
+      await pool.query(
+        `INSERT INTO visitors (ip_address) VALUES ($1)`,
+        [ip]
+      );
+
+      await pool.query(`
+        UPDATE site_stats
+        SET total_visits = total_visits + 1,
+            today_visits = today_visits + 1,
+            online_users = online_users + 1
+        WHERE id=1
+      `);
+
+    }
+
+    res.json({ message: "counted" });
+
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+// api giảm online khi khách hàng rời trang 
+app.post("/api/leave", async (req, res) => {
+  try {
+
+    await pool.query(`
+      UPDATE site_stats
+      SET online_users = GREATEST(online_users - 1,0)
+      WHERE id=1
+    `);
+
+    res.json({ message: "leave counted" });
+
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+// api lấy thống kê lượt truy cập
+app.get("/api/admin/stats", async (req, res) => {
+  try {
+
+    const result = await pool.query(`
+      SELECT total_visits,today_visits,online_users
+      FROM site_stats
+      WHERE id=1
+    `);
+
+    res.json(result.rows[0]);
+
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
 // ================= SERVER =================
 
 const PORT = process.env.PORT || 5000;
