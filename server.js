@@ -810,6 +810,23 @@ app.get("/api/parts", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+//lấy dữ liệu linh kiện
+app.get("/api/admin/parts", async (req, res) => {
+  try {
+
+    const result = await pool.query(`
+      SELECT id, name, price, quantity
+      FROM parts
+      ORDER BY id DESC
+    `);
+
+    res.json(result.rows);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 // thêm linh kiện 
 app.post("/api/admin/parts", async(req,res)=>{
 
